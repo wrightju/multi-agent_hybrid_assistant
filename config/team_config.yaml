@@ -1,0 +1,5 @@
+global:
+  logging_level: "INFO"
+teams:
+  intel_vpro:
+    setting_example: "example_value"
