@@ -1,7 +1,4 @@
 
-# Updated `vpse_assistant.py` to initialize ConfigManager and SessionManager
-# and integrate them with the agents.
-
 import os
 from agents.operator import OperatorAgent
 from agents.troubleshooting_agent import VProTroubleshootingAgent
