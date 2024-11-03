@@ -3,10 +3,10 @@
 ## 1. Project Overview
 
 ### Project Name
-**vPSE Assistant**
+**Resident Technical Advisor (resident_ta.py)**
 
 ### Objective
-To develop a multi-agent system that dynamically routes requests, leverages team-specific and shared knowledge bases, and provides secure access control over confidential data for multiple Intel teams.
+To develop a multi-agent system that dynamically routes requests, leverages team-specific and shared knowledge bases, and provides secure access control over confidential data for multiple Intel teams.  There is a focus on modularity, persistence, and code reuse.
 
 ### Key Components
 1. **Operator Agent** - Routes and transfers requests, handles access control.
@@ -43,6 +43,16 @@ To develop a multi-agent system that dynamically routes requests, leverages team
 - **Operator Agent**: Central entry point for routing requests, handles agent transfer and access verification.
 - **Troubleshooting Agent**: Loads team-specific prompts, vector stores, and reference materials dynamically. Can request access to additional team vector stores, with permissions.
 - **Document Processor Agent**: Consolidated agent with modular methods for creating various documents, such as knowledge articles, training materials, white papers, and presentations. Provides users with a streamlined interface for document-related tasks.
+- **GenericAgent Class**: A new GenericAgent base class in core/generic_agent.py consolidates shared functionalities for all agents.
+Functions include vector store management (building, querying), prompt loading, and request handling.
+Individual agents, such as VProTroubleshootingAgent, inherit from GenericAgent, reducing redundancy and promoting scalability.
+- **Modular Vector Store Management**: The core/vector_store.py module now centralizes vector store operations for easy reuse.
+Functions include build_vector_store, query_vector_store, save_vector_store, and load_vector_store.
+FAISS indexes and associated document chunks are saved to disk, enabling persistent, disk-based loading of the vector store and avoiding redundant rebuilds.
+- **System Prompt Integration**: Each agent uses an agent-specific system prompt loaded from a markdown file (e.g., vpro_troubleshooting_prompt.md for the VPro agent).
+Prompts are stored in prompts/ directories specific to each team, allowing the OperatorAgent and others to load relevant guidance tailored to their tasks.
+- **Document Chunk Persistence**: Document chunks are critical for vector store queries; they map document text to its corresponding embedding in FAISS.
+Using pickle, document chunks are saved to a file alongside the vector store index to ensure consistent retrieval after reloading from disk.
 
 ---
 
@@ -59,12 +69,15 @@ project-root/
 │   ├── team_config.yaml              # Global configuration file
 │   ├── constants.py                  # Constants and shared settings
 ├── core/
-│   ├── core_tools.py                 # Shared utilities
-│   ├── session_manager.py            # Manages session persistence
-│   └── config_manager.py             # Loads and manages configurations
+│   ├── core_tools.py                  # Shared utility functions
+│   ├── session_manager.py             # Manages session persistence
+│   ├── config_manager.py              # Loads and manages configurations
+│   ├── generic_agent.py               # Base class for agents, centralizing shared functionalities
+│   ├── vector_store.py                # Centralized vector store functions for persistence and querying
+│   └── prompt_utils.py                # Utility for loading system prompts
 ├── prompts/
-│   ├── router_prompt.md
-│   ├── initial_router_prompt.md
+│   ├── operator_prompt.md             # System prompt for the Operator Agent
+│   └── router_prompt.md               # Reserved for future routing prompts
 ├── teams/
 │   ├── intel_vpro/
 │   │   ├── reference_materials/
@@ -103,10 +116,36 @@ project-root/
 │   └── vector_store/
 │       ├── public/
 │       └── confidential/
-└── vpse_assistant.py                 # Entry point to initialize the Operator
+├── resident_ta.py                     # Main entry point for running the Operator Agent
+└── README.md                          # Project documentation
 
 ---
 
+### Key Files
+
+- **resident_ta.py**
+**Purpose**: The main entry point for initializing and running the OperatorAgent.
+**Description**: This script orchestrates the setup process for the assistant by loading configurations, initializing the VProTroubleshootingAgent, and managing user interactions. It also prompts the user to choose whether to regenerate the vector store.
+
+- **troubleshooting_agent.py**
+**Purpose**: Specialized agent for handling Intel vPRO troubleshooting requests.
+**Description**: Inherits from GenericAgent and is customized to load the vPRO-specific system prompt and reference materials. It provides tailored responses for vPRO troubleshooting, leveraging the centralized methods in GenericAgent for vector store handling and prompt-driven responses.
+
+- **generic_agent.py**
+**Purpose**: Base class for agents, consolidating shared functionalities.
+**Description**: Defines core methods for loading and building vector stores, handling queries, and generating responses. It includes the logic for integrating system prompts and can be inherited by other agents to avoid redundant code. The initialize_vector_store method loads a pre-existing vector store or builds a new one, depending on the need.
+
+- **prompt_utils.py**
+**Purpose**: Utility for loading agent-specific system prompts.
+**Description**: Contains load_system_prompt, a reusable function that loads a prompt from a specified markdown file. This function is used across agents to maintain prompt consistency and simplify prompt management.
+
+- **vector_store.py**
+**Purpose**: Centralized management of vector store operations.
+**Description**: Houses the main functions for building, querying, saving, and loading FAISS-based vector stores. It saves vector embeddings alongside their document chunks, ensuring persistent storage and efficient retrieval for similarity-based document matching.
+
+- **text_utils.py**
+**Purpose**: Provides utilities for text processing.
+**Description**: Contains chunk_text, a helper function that splits documents into smaller, token-limited chunks for efficient embedding and vector store storage. This utility ensures documents fit within token constraints, making them manageable for OpenAI embeddings.
 
 
 ### Rationale for Design
