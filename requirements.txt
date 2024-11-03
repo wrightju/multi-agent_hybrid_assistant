@@ -1,3 +1,7 @@
-pyyaml
 openai
 tqdm
+faiss-cpu
+numpy
+pyyaml
+pandas
+pymupdf

@@ -6,6 +6,7 @@ from agents.document_processor_agent import DocumentProcessorAgent
 from core.config_manager import ConfigManager
 from core.session_manager import SessionManager
 from config.constants import DEFAULT_SECURITY_LEVEL
+from core.pdf_tools import extract_text_from_pdfs
 
 # Mock knowledge base (for demonstration purposes)
 class MockKnowledgeBase:
@@ -36,6 +37,27 @@ def main():
     config_manager = ConfigManager('config/team_config.yaml')
     session_manager = SessionManager()
     print("ConfigManager and SessionManager initialized.")
+
+    # Initialize VProTroubleshootingAgent
+    knowledge_base = None  # Placeholder if needed for other purposes
+    vpro_agent = VProTroubleshootingAgent(
+        knowledge_base=knowledge_base,
+        config_manager=config_manager,
+        session_manager=session_manager,
+        openai_api_key=openai_api_key
+    )
+    
+    # Extract text from PDFs
+    pdf_folder_path = "teams/intel_vpro/reference_materials/public"
+    documents = extract_text_from_pdfs(pdf_folder_path)
+    
+    # Build the vector store with extracted text
+    vpro_agent.build_vector_store(documents)
+    
+    # Test a sample query
+    query = "I'm having issues with Intel vPro setup"
+    response = vpro_agent.handle_request(query)
+    print("Troubleshooting Response:", response)
 
     # Initialize OperatorAgent with OpenAI API key and prompt
     operator = OperatorAgent(openai_api_key=openai_api_key, config_manager=config_manager, session_manager=session_manager)
